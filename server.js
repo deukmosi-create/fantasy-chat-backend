@@ -46,3 +46,6 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
 });
+
+const fantasyRoutes = require('./routes/fantasyRoutes');
+app.use('/api/fantasy-profiles', fantasyRoutes);
