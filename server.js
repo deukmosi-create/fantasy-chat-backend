@@ -34,9 +34,6 @@ require('./config/passport');
 
 // Database
 const sequelize = require('./config/db');
-sequelize.sync().then(() => {
-  console.log('✅ Database synced');
-});
 
 // Routes
 app.use('/api/auth', authRoutes);
