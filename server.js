@@ -5,47 +5,60 @@ const cors = require('cors');
 const passport = require('passport');
 require('dotenv').config();
 
-const sequelize = require('./config/db');
+// Import routes
 const authRoutes = require('./routes/authRoutes');
+const fantasyRoutes = require('./routes/fantasyRoutes');
 
+// Initialize Express & HTTP server
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
-});
+
+// CORS setup — allow Vercel and localhost
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://fantasy-chat-frontend.vercel.app' // ← Your live Vercel URL
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
 
 // Middleware
-app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:3000" }));
 app.use(express.json());
 app.use(passport.initialize());
 require('./config/passport');
 
-// DB sync
+// Database
+const sequelize = require('./config/db');
 sequelize.sync().then(() => {
   console.log('✅ Database synced');
 });
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/fantasy-profiles', fantasyRoutes);
 
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'Fantasy Chat Backend is running!' });
 });
 
-// Socket.IO
+// WebSocket
+const io = socketIo(server, {
+  cors: corsOptions
+});
+
 io.on('connection', (socket) => {
   console.log('✅ WebSocket connected');
   socket.on('disconnect', () => console.log('❌ WebSocket disconnected'));
 });
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Backend running on http://localhost:${PORT}`);
+// Start server — MUST bind to 0.0.0.0 for Render
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Backend running on port ${PORT}`);
 });
-
-const fantasyRoutes = require('./routes/fantasyRoutes');
-app.use('/api/fantasy-profiles', fantasyRoutes);
